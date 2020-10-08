@@ -3,7 +3,7 @@ from __future__ import print_function, division
 from sympy import Expr, sympify, Symbol, Matrix
 from sympy.printing.pretty.stringpict import prettyForm
 from sympy.core.containers import Tuple
-from sympy.core.compatibility import is_sequence, string_types
+from sympy.core.compatibility import is_sequence
 
 from sympy.physics.quantum.dagger import Dagger
 from sympy.physics.quantum.matrixutils import (
@@ -61,7 +61,7 @@ def __qsympify_sequence_helper(seq):
     if not is_sequence(seq):
         if isinstance(seq, Matrix):
             return seq
-        elif isinstance(seq, string_types):
+        elif isinstance(seq, str):
             return Symbol(seq)
         else:
             return sympify(seq)
@@ -89,7 +89,7 @@ class QExpr(Expr):
     # derive from args.
 
     # The Hilbert space a quantum Object belongs to.
-    __slots__ = ['hilbert_space']
+    __slots__ = ('hilbert_space')
 
     is_commutative = False
 
@@ -329,7 +329,7 @@ class QExpr(Expr):
     def _represent_default_basis(self, **options):
         raise NotImplementedError('This object does not have a default basis')
 
-    def _represent(self, **options):
+    def _represent(self, *, basis=None, **options):
         """Represent this object in a given basis.
 
         This method dispatches to the actual methods that perform the
@@ -363,7 +363,6 @@ class QExpr(Expr):
             the representation, such as the number of basis functions to
             be used.
         """
-        basis = options.pop('basis', None)
         if basis is None:
             result = self._represent_default_basis(**options)
         else:

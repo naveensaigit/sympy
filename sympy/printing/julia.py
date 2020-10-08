@@ -10,10 +10,12 @@ complete source code files.
 """
 
 from __future__ import print_function, division
+
+from typing import Any, Dict
+
 from sympy.core import Mul, Pow, S, Rational
-from sympy.core.compatibility import string_types, range
 from sympy.core.mul import _keep_coeff
-from sympy.printing.codeprinter import CodePrinter, Assignment
+from sympy.printing.codeprinter import CodePrinter
 from sympy.printing.precedence import precedence, PRECEDENCE
 from re import search
 
@@ -65,7 +67,7 @@ class JuliaCodePrinter(CodePrinter):
         'allow_unknown_functions': False,
         'contract': True,
         'inline': True,
-    }
+    }  # type: Dict[str, Any]
     # Note: contract is for expressing tensors as loops (if True), or just
     # assignment (if False).  FIXME: this should be looked a more carefully
     # for Julia.
@@ -262,6 +264,7 @@ class JuliaCodePrinter(CodePrinter):
 
 
     def _print_Assignment(self, expr):
+        from sympy.codegen.ast import Assignment
         from sympy.functions.elementary.piecewise import Piecewise
         from sympy.tensor.indexed import IndexedBase
         # Copied from codeprinter, but remove special MatrixSymbol treatment
@@ -355,20 +358,6 @@ class JuliaCodePrinter(CodePrinter):
                                             self._print(AIJ), A.rows, A.cols)
 
 
-    # FIXME: Str/CodePrinter could define each of these to call the _print
-    # method from higher up the class hierarchy (see _print_NumberSymbol).
-    # Then subclasses like us would not need to repeat all this.
-    _print_Matrix = \
-        _print_DenseMatrix = \
-        _print_MutableDenseMatrix = \
-        _print_ImmutableMatrix = \
-        _print_ImmutableDenseMatrix = \
-        _print_MatrixBase
-    _print_MutableSparseMatrix = \
-        _print_ImmutableSparseMatrix = \
-        _print_SparseMatrix
-
-
     def _print_MatrixElement(self, expr):
         return self.parenthesize(expr.parent, PRECEDENCE["Atom"], strict=True) \
             + '[%s,%s]' % (expr.i + 1, expr.j + 1)
@@ -407,6 +396,16 @@ class JuliaCodePrinter(CodePrinter):
     def _print_Identity(self, expr):
         return "eye(%s)" % self._print(expr.shape[0])
 
+    def _print_HadamardProduct(self, expr):
+        return '.*'.join([self.parenthesize(arg, precedence(expr))
+                          for arg in expr.args])
+
+    def _print_HadamardPower(self, expr):
+        PREC = precedence(expr)
+        return '.**'.join([
+            self.parenthesize(expr.base, PREC),
+            self.parenthesize(expr.exp, PREC)
+            ])
 
     # Note: as of 2015, Julia doesn't have spherical Bessel functions
     def _print_jn(self, expr):
@@ -464,7 +463,7 @@ class JuliaCodePrinter(CodePrinter):
         """Accepts a string of code or a list of code lines"""
 
         # code mostly copied from ccode
-        if isinstance(code, string_types):
+        if isinstance(code, str):
             code_lines = self.indent_code(code.splitlines(True))
             return ''.join(code_lines)
 
@@ -535,7 +534,7 @@ def julia_code(expr, assign_to=None, **settings):
     >>> julia_code(sin(x).series(x).removeO())
     'x.^5/120 - x.^3/6 + x'
 
-    >>> from sympy import Rational, ceiling, Abs
+    >>> from sympy import Rational, ceiling
     >>> x, y, tau = symbols("x, y, tau")
     >>> julia_code((2*tau)**Rational(7, 2))
     '8*sqrt(2)*tau.^(7/2)'
@@ -616,7 +615,7 @@ def julia_code(expr, assign_to=None, **settings):
     ``contract=False`` will just print the assignment expression that should be
     looped over:
 
-    >>> from sympy import Eq, IndexedBase, Idx, ccode
+    >>> from sympy import Eq, IndexedBase, Idx
     >>> len_y = 5
     >>> y = IndexedBase('y', shape=(len_y,))
     >>> t = IndexedBase('t', shape=(len_y,))

@@ -9,9 +9,9 @@ Math object where possible.
 
 from __future__ import print_function, division
 
-from sympy.codegen.ast import Assignment
+from typing import Any, Dict
+
 from sympy.core import S
-from sympy.core.compatibility import string_types, range
 from sympy.printing.codeprinter import CodePrinter
 from sympy.printing.precedence import precedence, PRECEDENCE
 
@@ -56,8 +56,8 @@ class JavascriptCodePrinter(CodePrinter):
         'user_functions': {},
         'human': True,
         'allow_unknown_functions': False,
-        'contract': True
-    }
+        'contract': True,
+    }  # type: Dict[str, Any]
 
     def __init__(self, settings={}):
         CodePrinter.__init__(self, settings)
@@ -103,7 +103,7 @@ class JavascriptCodePrinter(CodePrinter):
             return '1/%s' % (self.parenthesize(expr.base, PREC))
         elif expr.exp == 0.5:
             return 'Math.sqrt(%s)' % self._print(expr.base)
-        elif expr.exp == S(1)/3:
+        elif expr.exp == S.One/3:
             return 'Math.cbrt(%s)' % self._print(expr.base)
         else:
             return 'Math.pow(%s, %s)' % (self._print(expr.base),
@@ -145,6 +145,7 @@ class JavascriptCodePrinter(CodePrinter):
         return 'Number.NEGATIVE_INFINITY'
 
     def _print_Piecewise(self, expr):
+        from sympy.codegen.ast import Assignment
         if expr.args[-1].cond != True:
             # We need the last conditional to be a True, otherwise the resulting
             # function may not return a result.
@@ -184,7 +185,7 @@ class JavascriptCodePrinter(CodePrinter):
     def indent_code(self, code):
         """Accepts a string of code or a list of code lines"""
 
-        if isinstance(code, string_types):
+        if isinstance(code, str):
             code_lines = self.indent_code(code.splitlines(True))
             return ''.join(code_lines)
 
