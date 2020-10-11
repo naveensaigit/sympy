@@ -21,7 +21,6 @@ from sympy import (Basic, S, Expr, Symbol, Tuple, And, Add, Eq, lambdify, Or,
                    Equality, Lambda, sympify, Dummy, Ne, KroneckerDelta,
                    DiracDelta, Mul, Indexed, MatrixSymbol, Function,
                    ImmutableMatrix, Integral)
-from sympy.core.compatibility import string_types
 from sympy.core.relational import Relational
 from sympy.core.sympify import _sympify
 from sympy.sets.sets import FiniteSet, ProductSet, Intersection
